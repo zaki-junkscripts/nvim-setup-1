@@ -52,10 +52,10 @@ end
 vim.keymap.set("n", "<C-q>", ":bd<CR>", { silent = true })
 
 -- Jump to NEXT cell
-vim.keymap.set("n", "[c", "/# %%<CR>:noh<CR>jzz", { desc = "Next Code Cell", silent = true })
+vim.keymap.set("n", "]c", "/# %%<CR>:noh<CR>jzz", { desc = "Next Code Cell", silent = true })
 
 -- Jump to PREVIOUS cell
-vim.keymap.set("n", "]c", "k?# %%<CR>:noh<CR>jzz", { desc = "Prev Code Cell", silent = true })
+vim.keymap.set("n", "[c", "k?# %%<CR>:noh<CR>jzz", { desc = "Prev Code Cell", silent = true })
 
 
 vim.keymap.set("n", "<leader>cc", "o# %%<CR><Esc>", { desc = "New cell below" })
