@@ -20,47 +20,7 @@ return {
     end
   },
 
-  -- Hardtime
-  {
-    "m4xshen/hardtime.nvim",
-    lazy = false,
-    dependencies = { "MunifTanjim/nui.nvim" },
-    opts = {},
-  },
-
-  -- Autopairs
-  {
-    "windwp/nvim-autopairs",
-    config = function()
-      local npairs = require("nvim-autopairs")
-      npairs.setup({
-        check_ts = true,
-        fast_wrap = {},
-      })
-
-      local cmp_autopairs = require("nvim-autopairs.completion.cmp")
-      local cmp = require("cmp")
-      cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
-    end
-  },
-
-  -- File explorer
-  {
-    "nvim-tree/nvim-tree.lua",
-    version = "*",
-    lazy = false,
-    dependencies = { "nvim-tree/nvim-web-devicons" },
-    config = function()
-      require("nvim-tree").setup {
-        view = {
-          centralize_selection = true,
-        },
-      }
-      vim.keymap.set("n", "<leader>e", ":NvimTreeToggle<CR>", { silent = true })
-    end,
-  },
-
-  -- Edgy.nvim
+  -- edgy.nvim
   {
     "folke/edgy.nvim",
     event = "VeryLazy",
@@ -71,6 +31,11 @@ return {
     opts = {
       animate = { enabled = false },
       exit_when_last = true,
+      -- Exclude all calendar buffers from edgy layouts
+      filter = function(bufnr, winid)
+        local ft = vim.bo[bufnr].filetype
+        return ft ~= "calendar"
+      end,
       left = {
         { title = "Nvim Tree", ft = "NvimTree", size = { 30, min = 10, max = 50 } },
       },
@@ -80,6 +45,116 @@ return {
     },
   },
 
+  -- bufferline.nvim
+  {
+    "akinsho/bufferline.nvim",
+    version = "*",
+    dependencies = "nvim-tree/nvim-web-devicons",
+    config = function()
+      require("bufferline").setup({
+        options = {
+          mode = "buffers",
+          diagnostics = "nvim_lsp",
+          separator_style = "slant",
+          offsets = {
+            { filetype = "NvimTree", text = "File Explorer", highlight = "Directory", separator = true },
+          },
+        },
+      })
+
+      -- Hide bufferline in calendar buffers
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = "calendar",
+        callback = function()
+          vim.opt.showtabline = 0
+        end,
+      })
+
+      -- Restore bufferline when no calendar buffers remain
+      vim.api.nvim_create_autocmd({ "BufWinLeave", "BufDelete" }, {
+        pattern = "*",
+        callback = function()
+          for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+            if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == "calendar" then
+              return
+            end
+          end
+          vim.opt.showtabline = 2
+        end,
+      })
+    end,
+  },
+
+  -- Hardtime.nvim
+  {
+    "m4xshen/hardtime.nvim",
+    lazy = false,
+    dependencies = { "MunifTanjim/nui.nvim" },
+    opts = {
+      -- Disable Hardtime for calendar buffers
+      disabled_filetypes = { "calendar" },
+    },
+  },
+  --
+
+  -- -- Autopairs
+  -- {
+  --   "windwp/nvim-autopairs",
+  --   config = function()
+  --     local npairs = require("nvim-autopairs")
+  --     npairs.setup({
+  --       check_ts = true,
+  --       fast_wrap = {},
+  --     })
+  --
+  --     local cmp_autopairs = require("nvim-autopairs.completion.cmp")
+  --     local cmp = require("cmp")
+  --     cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
+  --   end
+  -- },
+  --
+  -- File explorer
+
+
+  {
+    "nvim-tree/nvim-tree.lua",
+    version = "*",
+    lazy = false,
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+    config = function()
+      require("nvim-tree").setup {
+        view = {
+          centralize_selection = true,
+        },
+        filters = {
+          dotfiles = true,
+          custom = { "^%.env$", "^%.config$"},
+        },
+      }
+      vim.keymap.set("n", "<leader>e", ":NvimTreeToggle<CR>", { silent = true })
+    end,
+  },
+
+  -- -- Edgy.nvim
+  -- {
+  --   "folke/edgy.nvim",
+  --   event = "VeryLazy",
+  --   init = function()
+  --     vim.opt.laststatus = 3
+  --     vim.opt.splitkeep = "screen"
+  --   end,
+  --   opts = {
+  --     animate = { enabled = false },
+  --     exit_when_last = true,
+  --     left = {
+  --       { title = "Nvim Tree", ft = "NvimTree", size = { 30, min = 10, max = 50 } },
+  --     },
+  --     bottom = {
+  --       { title = "Iron REPL", ft = "iron", size = 12 },
+  --     },
+  --   },
+  -- },
+  --
   -- Jupytext.nvim
   {
     "GCBallesteros/jupytext.nvim",
@@ -232,7 +307,9 @@ return {
       require("nvim-treesitter.configs").setup({
         ensure_installed = { "c", "lua", "vim", "vimdoc", "query", "python", "javascript" },
         auto_install = false,
-        highlight = { enable = true, additional_vim_regex_highlighting = false },
+        highlight = { enable = true,
+                      disable = { "calendar", "vim"},
+                      additional_vim_regex_highlighting = false },
       })
     end
   },
@@ -337,23 +414,23 @@ return {
     end,
   },
 
-  -- Bufferline
-  {
-    "akinsho/bufferline.nvim",
-    version = "*",
-    dependencies = "nvim-tree/nvim-web-devicons",
-    config = function()
-      require("bufferline").setup({
-        options = {
-          mode = "buffers",
-          diagnostics = "nvim_lsp",
-          separator_style = "slant",
-          offsets = { { filetype = "NvimTree", text = "File Explorer", highlight = "Directory", separator = true } },
-        },
-      })
-    end,
-  },
-
+  -- -- Bufferline
+  -- {
+  --   "akinsho/bufferline.nvim",
+  --   version = "*",
+  --   dependencies = "nvim-tree/nvim-web-devicons",
+  --   config = function()
+  --     require("bufferline").setup({
+  --       options = {
+  --         mode = "buffers",
+  --         diagnostics = "nvim_lsp",
+  --         separator_style = "slant",
+  --         offsets = { { filetype = "NvimTree", text = "File Explorer", highlight = "Directory", separator = true } },
+  --       },
+  --     })
+  --   end,
+  -- },
+  --
   {
    'hat0uma/csvview.nvim',
    config = function()
